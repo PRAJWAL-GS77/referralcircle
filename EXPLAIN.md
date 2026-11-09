@@ -36,3 +36,11 @@
   - If limit reached: locks interface with an anti-spam warning preventing more than 5 follow-ups.
 - **Optimistic State & Cache Management**: Leveraged TanStack Query (`useQuery`, `useMutation`, `invalidateQueries`) to instantly synchronize contact status, follow-up counts, and timeline events upon outreach creations or deletions.
 - **Production Build Verification**: Verified clean bundle generation via Vite with loading skeletons, empty states, and toast notifications.
+
+## Phase 5: Dashboard Analytics, Templates System, Settings & Dark Mode
+
+- **Recharts Analytics & Funnel Visualization**: Built `DashboardPage.jsx` visualizing pipeline progress (funnel drop-offs from initial contact to offer), response rate per communication channel, and longitudinal outreach volume using responsive SVGs.
+- **Dynamic Template Substitution**: Created `TemplatesPage.jsx` and seamlessly wired template rendering into `LogOutreachModal.jsx`, allowing students to draft standardized messages where server replaces placeholders (`{{contactName}}`, `{{company}}`, `{{role}}`, `{{myName}}`) upon selection.
+- **Account Governance & Global Invalidation**: Implemented `SettingsPage.jsx` allowing users to tune default cooldown thresholds, export data to CSV, invalidate all active device sessions via `tokenVersion` increments, and permanently erase all user records via cascading deletion.
+- **Tailwind Dark Mode Architecture**: Implemented `ThemeContext.jsx` applying class-based dark styling (`dark:bg-slate-950`, `dark:text-white`) with automated system preference detection and localStorage persistence.
+- **Accessibility & Responsive Compliance**: Verified fluid responsive behavior across mobile (360px), tablet (768px), and desktop (1280px), equipped inputs with explicit labels and `aria-label` attributes, and added visible focus rings for keyboard navigation.

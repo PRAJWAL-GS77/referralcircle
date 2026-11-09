@@ -18,5 +18,6 @@ const updateSettingsSchema = z.object({
 
 router.get('/', settingsController.getSettings);
 router.patch('/', validate(updateSettingsSchema), settingsController.updateSettings);
+router.delete('/', settingsController.deleteAccount);
 
 export default router;

@@ -1,5 +1,7 @@
 import { User } from '../models/user.model.js';
 import { Contact } from '../models/contact.model.js';
+import { Outreach } from '../models/outreach.model.js';
+import { Template } from '../models/template.model.js';
 import { AppError } from '../middleware/error.middleware.js';
 
 export const getSettings = async (userId) => {
@@ -49,4 +51,20 @@ export const updateSettings = async (userId, settingsUpdate) => {
   }
 
   return user.settings;
+};
+
+export const deleteAccount = async (userId) => {
+  const user = await User.findByIdAndDelete(userId);
+  if (!user) {
+    throw new AppError('User not found', 404, 'NOT_FOUND');
+  }
+
+  // Cascading deletion of all user data
+  await Promise.all([
+    Contact.deleteMany({ userId }),
+    Outreach.deleteMany({ userId }),
+    Template.deleteMany({ userId })
+  ]);
+
+  return { message: 'Account and all associated referral data permanently deleted' };
 };

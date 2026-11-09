@@ -21,3 +21,14 @@ export const updateSettings = async (req, res, next) => {
     next(error);
   }
 };
+
+export const deleteAccount = async (req, res, next) => {
+  try {
+    const result = await settingsService.deleteAccount(req.userId);
+    res.status(200).json({
+      data: result
+    });
+  } catch (error) {
+    next(error);
+  }
+};

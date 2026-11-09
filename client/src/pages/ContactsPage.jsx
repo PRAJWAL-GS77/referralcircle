@@ -6,7 +6,7 @@ import { StatusBadge, OutcomeBadge } from '../components/common/Badge.jsx';
 import { CooldownChip } from '../components/common/CooldownChip.jsx';
 import { TableSkeleton } from '../components/common/Skeleton.jsx';
 import { EmptyState } from '../components/common/EmptyState.jsx';
-import { Search, Plus, Download, Filter, ChevronLeft, ChevronRight, UserPlus, ExternalLink, Trash2 } from 'lucide-react';
+import { Search, Plus, Download, ChevronLeft, ChevronRight, UserPlus, ExternalLink, Trash2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 export const ContactsPage = () => {
@@ -43,6 +43,7 @@ export const ContactsPage = () => {
     onSuccess: () => {
       toast.success('Contact deleted');
       queryClient.invalidateQueries({ queryKey: ['contacts'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard'] });
     },
     onError: (err) => {
       toast.error(err.response?.data?.error?.message || 'Failed to delete contact');
@@ -73,22 +74,24 @@ export const ContactsPage = () => {
       {/* Header bar */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900">Networking Contacts</h1>
-          <p className="text-xs text-slate-500 mt-1">
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">Networking Contacts</h1>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
             Organize outreach, inspect relationship history, and monitor cooldown status.
           </p>
         </div>
         <div className="flex items-center gap-2.5">
           <button
             onClick={handleExportCsv}
-            className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 shadow-sm transition"
+            aria-label="Export all contacts to CSV"
+            className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 shadow-sm focus:outline-none focus:ring-2 focus:ring-brand-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 transition"
           >
             <Download className="h-4 w-4" />
             Export CSV
           </button>
           <Link
             to="/contacts/new"
-            className="inline-flex items-center gap-1.5 rounded-xl bg-brand-600 px-4 py-2 text-xs font-semibold text-white shadow-sm hover:bg-brand-700 transition"
+            aria-label="Add new contact"
+            className="inline-flex items-center gap-1.5 rounded-xl bg-brand-600 px-4 py-2 text-xs font-semibold text-white shadow-sm hover:bg-brand-700 focus:outline-none focus:ring-2 focus:ring-brand-500 transition"
           >
             <Plus className="h-4 w-4" />
             Add Contact
@@ -97,32 +100,36 @@ export const ContactsPage = () => {
       </div>
 
       {/* Filter and Search Bar */}
-      <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm space-y-3">
+      <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900 space-y-3">
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {/* Search box */}
           <div className="relative">
+            <label htmlFor="search-input" className="sr-only">Search contacts</label>
             <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
             <input
+              id="search-input"
               type="text"
               value={q}
               onChange={(e) => {
                 setQ(e.target.value);
                 setPage(1);
               }}
-              placeholder="Search by name, company, tag..."
-              className="w-full rounded-xl border border-slate-200 bg-slate-50/50 pl-9 pr-3 py-2 text-xs text-slate-800 placeholder-slate-400 focus:border-brand-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-brand-500"
+              placeholder="Search name, company, tag..."
+              className="w-full rounded-xl border border-slate-200 bg-slate-50/50 pl-9 pr-3 py-2 text-xs text-slate-800 placeholder-slate-400 focus:border-brand-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-slate-700 dark:bg-slate-800 dark:text-white dark:focus:bg-slate-850"
             />
           </div>
 
           {/* Status filter */}
           <div>
+            <label htmlFor="status-filter" className="sr-only">Filter by status</label>
             <select
+              id="status-filter"
               value={status}
               onChange={(e) => {
                 setStatus(e.target.value);
                 setPage(1);
               }}
-              className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3 py-2 text-xs text-slate-800 focus:border-brand-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-brand-500"
+              className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3 py-2 text-xs text-slate-800 focus:border-brand-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
             >
               <option value="">All Statuses</option>
               <option value="not_contacted">Not Contacted</option>
@@ -137,13 +144,15 @@ export const ContactsPage = () => {
 
           {/* Relationship type */}
           <div>
+            <label htmlFor="relationship-filter" className="sr-only">Filter by relationship</label>
             <select
+              id="relationship-filter"
               value={relationshipType}
               onChange={(e) => {
                 setRelationshipType(e.target.value);
                 setPage(1);
               }}
-              className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3 py-2 text-xs text-slate-800 focus:border-brand-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-brand-500"
+              className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3 py-2 text-xs text-slate-800 focus:border-brand-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
             >
               <option value="">All Relationships</option>
               <option value="alumni">Alumni</option>
@@ -157,7 +166,7 @@ export const ContactsPage = () => {
 
           {/* Due follow-up toggle */}
           <div className="flex items-center">
-            <label className="flex items-center gap-2 text-xs font-semibold text-slate-700 cursor-pointer select-none">
+            <label className="flex items-center gap-2 text-xs font-semibold text-slate-700 dark:text-slate-300 cursor-pointer select-none">
               <input
                 type="checkbox"
                 checked={dueOnly}
@@ -167,14 +176,14 @@ export const ContactsPage = () => {
                 }}
                 className="h-4 w-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500"
               />
-              Show Due for Follow-up only
+              Due for Follow-up only
             </label>
           </div>
         </div>
       </div>
 
       {/* Contacts Table */}
-      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
         {isLoading ? (
           <TableSkeleton rows={6} />
         ) : contacts.length === 0 ? (
@@ -193,8 +202,8 @@ export const ContactsPage = () => {
           />
         ) : (
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-slate-100 text-left text-xs">
-              <thead className="bg-slate-50 text-slate-500 font-semibold uppercase tracking-wider">
+            <table className="min-w-full divide-y divide-slate-100 text-left text-xs dark:divide-slate-800">
+              <thead className="bg-slate-50 text-slate-500 font-semibold uppercase tracking-wider dark:bg-slate-850 dark:text-slate-400">
                 <tr>
                   <th className="px-6 py-3.5">Name & Role</th>
                   <th className="px-6 py-3.5">Company</th>
@@ -204,19 +213,19 @@ export const ContactsPage = () => {
                   <th className="px-6 py-3.5 text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 text-slate-700">
+              <tbody className="divide-y divide-slate-100 text-slate-700 dark:divide-slate-800 dark:text-slate-300">
                 {contacts.map((contact) => (
                   <tr
                     key={contact._id}
-                    className="hover:bg-slate-50/80 transition cursor-pointer"
+                    className="hover:bg-slate-50/80 transition cursor-pointer dark:hover:bg-slate-800/60"
                     onClick={() => navigate(`/contacts/${contact._id}`)}
                   >
                     <td className="px-6 py-4">
-                      <div className="font-semibold text-slate-900">{contact.name}</div>
-                      <div className="text-[11px] text-slate-400">{contact.role || 'Role unassigned'}</div>
+                      <div className="font-semibold text-slate-900 dark:text-white">{contact.name}</div>
+                      <div className="text-[11px] text-slate-400 dark:text-slate-500">{contact.role || 'Role unassigned'}</div>
                     </td>
                     <td className="px-6 py-4">
-                      <span className="font-medium text-slate-800">{contact.company || '—'}</span>
+                      <span className="font-medium text-slate-800 dark:text-slate-200">{contact.company || '—'}</span>
                     </td>
                     <td className="px-6 py-4">
                       <StatusBadge status={contact.status} />
@@ -231,7 +240,8 @@ export const ContactsPage = () => {
                       <div className="flex items-center justify-end gap-2">
                         <Link
                           to={`/contacts/${contact._id}`}
-                          className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition"
+                          aria-label={`View details for ${contact.name}`}
+                          className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-slate-800 dark:hover:text-slate-200 transition"
                           title="View Details"
                         >
                           <ExternalLink className="h-4 w-4" />
@@ -242,7 +252,8 @@ export const ContactsPage = () => {
                               deleteMutation.mutate(contact._id);
                             }
                           }}
-                          className="rounded-lg p-1.5 text-slate-400 hover:bg-rose-50 hover:text-rose-600 transition"
+                          aria-label={`Delete contact ${contact.name}`}
+                          className="rounded-lg p-1.5 text-slate-400 hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-950/60 dark:hover:text-rose-400 transition"
                           title="Delete Contact"
                         >
                           <Trash2 className="h-4 w-4" />
@@ -258,23 +269,25 @@ export const ContactsPage = () => {
 
         {/* Pagination controls */}
         {meta.totalPages > 1 && (
-          <div className="flex items-center justify-between border-t border-slate-100 px-6 py-3 bg-white">
-            <span className="text-xs text-slate-500">
-              Showing page <span className="font-semibold text-slate-800">{meta.page}</span> of{' '}
-              <span className="font-semibold text-slate-800">{meta.totalPages}</span> ({meta.total} total)
+          <div className="flex items-center justify-between border-t border-slate-100 px-6 py-3 bg-white dark:border-slate-800 dark:bg-slate-900">
+            <span className="text-xs text-slate-500 dark:text-slate-400">
+              Showing page <span className="font-semibold text-slate-800 dark:text-white">{meta.page}</span> of{' '}
+              <span className="font-semibold text-slate-800 dark:text-white">{meta.totalPages}</span> ({meta.total} total)
             </span>
             <div className="flex items-center gap-2">
               <button
                 disabled={page <= 1}
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
-                className="rounded-lg border border-slate-200 p-1.5 text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition"
+                aria-label="Previous page"
+                className="rounded-lg border border-slate-200 p-1.5 text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800 transition"
               >
                 <ChevronLeft className="h-4 w-4" />
               </button>
               <button
                 disabled={page >= meta.totalPages}
                 onClick={() => setPage((p) => p + 1)}
-                className="rounded-lg border border-slate-200 p-1.5 text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition"
+                aria-label="Next page"
+                className="rounded-lg border border-slate-200 p-1.5 text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800 transition"
               >
                 <ChevronRight className="h-4 w-4" />
               </button>
