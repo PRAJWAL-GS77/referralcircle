@@ -23,23 +23,24 @@ export const createOutreach = async (userId, contactId, data, userSettings) => {
     throw new AppError('Contact not found', 404, 'NOT_FOUND');
   }
 
-  const now = new Date();
-  const sentAtDate = data.sentAt ? new Date(data.sentAt) : now;
+  const serverNow = new Date();
+  const sentAtDate = data.sentAt ? new Date(data.sentAt) : serverNow;
 
   // Outreach cannot be logged in the future
-  if (sentAtDate.getTime() > now.getTime() + 1000) {
+  if (sentAtDate.getTime() > serverNow.getTime() + 1000) {
     throw new AppError('Sent date cannot be in the future', 400, 'INVALID_DATE');
   }
 
   let outreach;
 
   if (data.direction === 'sent') {
+    // Cooldown and max-follow-up checks ALWAYS use real server time, never client-supplied sentAt
     const evalResult = evaluateSentOutreachEligibility({
       contact,
       userSettings,
       override: data.override,
       overrideReason: data.overrideReason,
-      now: sentAtDate
+      now: serverNow
     });
 
     if (!evalResult.allowed) {
@@ -60,13 +61,27 @@ export const createOutreach = async (userId, contactId, data, userSettings) => {
       messageSummary: data.messageSummary,
       messageBody: data.messageBody || '',
       overrideReason: evalResult.usedOverride ? data.overrideReason.trim() : null,
-      sentAt: evalResult.lastOutreachAt
+      sentAt: sentAtDate
     });
 
     contact.status = evalResult.status;
     contact.followUpCount = evalResult.followUpCount;
-    contact.lastOutreachAt = evalResult.lastOutreachAt;
-    contact.nextEligibleAt = evalResult.nextEligibleAt;
+
+    // Set lastOutreachAt and nextEligibleAt ONLY if sentAt is the latest outreach
+    const isLatestOutreach =
+      !contact.lastOutreachAt || sentAtDate.getTime() >= new Date(contact.lastOutreachAt).getTime();
+
+    if (isLatestOutreach) {
+      contact.lastOutreachAt = sentAtDate;
+      const effectiveCooldown = getEffectiveCooldownDays(
+        contact.cooldownDays,
+        userSettings?.defaultCooldownDays
+      );
+      contact.nextEligibleAt = new Date(
+        sentAtDate.getTime() + effectiveCooldown * 24 * 60 * 60 * 1000
+      );
+    }
+
     await contact.save();
   } else {
     // direction === 'received'
@@ -80,13 +95,19 @@ export const createOutreach = async (userId, contactId, data, userSettings) => {
       channel: data.channel,
       messageSummary: data.messageSummary,
       messageBody: data.messageBody || '',
-      sentAt: evalResult.lastReplyAt
+      sentAt: sentAtDate
     });
 
     contact.status = evalResult.status;
-    contact.lastReplyAt = evalResult.lastReplyAt;
     contact.followUpCount = 0;
     contact.nextEligibleAt = null;
+
+    const isLatestReply =
+      !contact.lastReplyAt || sentAtDate.getTime() >= new Date(contact.lastReplyAt).getTime();
+    if (isLatestReply) {
+      contact.lastReplyAt = sentAtDate;
+    }
+
     await contact.save();
   }
 

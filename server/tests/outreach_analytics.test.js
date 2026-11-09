@@ -226,6 +226,41 @@ describe('Integration Tests: Outreach, Cooldown Enforcement, Dashboard & Analyti
       expect(res.body.error.details.daysLeft).toBeGreaterThanOrEqual(1);
     });
 
+    it('returns 409 when client supplies a backdated sentAt during an active cooldown', async () => {
+      const contactId = '672cb5e634ab9c3491df2819';
+      const futureDate = new Date();
+      futureDate.setDate(futureDate.getDate() + 5);
+
+      contactsStore.push(
+        createMockContact({
+          _id: contactId,
+          userId: user._id,
+          name: 'Principal Engineer',
+          status: 'awaiting_response',
+          followUpCount: 1,
+          lastOutreachAt: new Date(),
+          nextEligibleAt: futureDate
+        })
+      );
+
+      // Client sends a sentAt that is 2 days in the past, but server time is within active cooldown
+      const backdatedTime = new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString();
+
+      const res = await request(app)
+        .post(`/api/contacts/${contactId}/outreach`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({
+          direction: 'sent',
+          channel: 'linkedin',
+          messageSummary: 'Attempting to bypass cooldown with backdated sentAt',
+          sentAt: backdatedTime
+        });
+
+      expect(res.status).toBe(409);
+      expect(res.body.error.code).toBe('COOLDOWN_ACTIVE');
+      expect(res.body.error.details.daysLeft).toBeGreaterThanOrEqual(1);
+    });
+
     it('permits follow-up during cooldown when valid override is provided', async () => {
       const contactId = '672cb5e634ab9c3491df2812';
       const futureDate = new Date();
@@ -354,6 +389,17 @@ describe('Integration Tests: Outreach, Cooldown Enforcement, Dashboard & Analyti
       expect(res.status).toBe(200);
       expect(res.body.data.contact.status).toBe('not_contacted');
       expect(res.body.data.contact.followUpCount).toBe(0);
+    });
+  });
+
+  describe('CORS Enforcement', () => {
+    it('returns 403 with code CORS_BLOCKED for unauthorized origins', async () => {
+      const res = await request(app)
+        .get('/api/health')
+        .set('Origin', 'https://malicious-site.example.com');
+
+      expect(res.status).toBe(403);
+      expect(res.body.error.code).toBe('CORS_BLOCKED');
     });
   });
 

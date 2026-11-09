@@ -18,6 +18,16 @@ export const notFoundHandler = (req, res, next) => {
 };
 
 export const errorHandler = (err, req, res, next) => {
+  // CORS origin errors return 403 with code CORS_BLOCKED
+  if (err.code === 'CORS_BLOCKED' || (err.message && err.message.toLowerCase().includes('cors'))) {
+    return res.status(403).json({
+      error: {
+        code: 'CORS_BLOCKED',
+        message: err.message || 'CORS policy blocked access from this origin'
+      }
+    });
+  }
+
   const statusCode = err.statusCode || (err.status ? Number(err.status) : 500);
   const code = err.code && typeof err.code === 'string' ? err.code : (statusCode === 404 ? 'NOT_FOUND' : 'INTERNAL_SERVER_ERROR');
   const message = err.message || 'An unexpected error occurred';

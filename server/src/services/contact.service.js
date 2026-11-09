@@ -2,6 +2,27 @@ import { Contact } from '../models/contact.model.js';
 import { Outreach } from '../models/outreach.model.js';
 import { AppError } from '../middleware/error.middleware.js';
 
+const escapeRegex = (string) => string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+const ALLOWED_SORT_FIELDS = new Set([
+  'createdAt',
+  '-createdAt',
+  'updatedAt',
+  '-updatedAt',
+  'name',
+  '-name',
+  'company',
+  '-company',
+  'nextEligibleAt',
+  '-nextEligibleAt',
+  'status',
+  '-status',
+  'followUpCount',
+  '-followUpCount',
+  'lastOutreachAt',
+  '-lastOutreachAt'
+]);
+
 export const listContacts = async (userId, query, userSettings) => {
   const {
     q,
@@ -41,7 +62,8 @@ export const listContacts = async (userId, query, userSettings) => {
   }
 
   if (q && q.trim()) {
-    const regex = new RegExp(q.trim(), 'i');
+    const safeQ = escapeRegex(q.trim());
+    const regex = new RegExp(safeQ, 'i');
     filter.$or = [
       { name: regex },
       { company: regex },
@@ -50,13 +72,14 @@ export const listContacts = async (userId, query, userSettings) => {
     ];
   }
 
+  const sortField = ALLOWED_SORT_FIELDS.has(sort) ? sort : '-createdAt';
   const pageNum = Math.max(1, parseInt(page, 10) || 1);
   const limitNum = Math.min(100, Math.max(1, parseInt(limit, 10) || 10));
   const skip = (pageNum - 1) * limitNum;
 
   const [contacts, total] = await Promise.all([
     Contact.find(filter)
-      .sort(sort)
+      .sort(sortField)
       .skip(skip)
       .limit(limitNum)
       .lean(),

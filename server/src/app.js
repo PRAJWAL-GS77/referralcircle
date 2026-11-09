@@ -35,7 +35,10 @@ app.use(
       ) {
         return callback(null, true);
       }
-      return callback(new Error(`CORS error: Origin ${origin} not permitted`));
+      const corsError = new Error(`CORS error: Origin ${origin} not permitted`);
+      corsError.statusCode = 403;
+      corsError.code = 'CORS_BLOCKED';
+      return callback(corsError);
     },
     credentials: true
   })
@@ -46,12 +49,15 @@ if (process.env.NODE_ENV !== 'test') {
   app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'));
 }
 
-// Body parsers with payload size restrictions (DDoS protection)
-app.use(express.json({ limit: '10kb' }));
-app.use(express.urlencoded({ extended: true, limit: '10kb' }));
+// Body parsers with 50kb limit
+app.use(express.json({ limit: '50kb' }));
+app.use(express.urlencoded({ extended: true, limit: '50kb' }));
 
 // Sanitize MongoDB operators like $gt, $ne to prevent query injection
 app.use(mongoSanitize());
+
+// Trust proxy for rate limiting behind reverse proxies (Render, Vercel, Nginx)
+app.set('trust proxy', 1);
 
 // Rate limiters (bypass in test environment)
 if (process.env.NODE_ENV !== 'test') {

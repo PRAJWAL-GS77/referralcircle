@@ -102,24 +102,28 @@ export const LoginPage = () => {
             {/* Real Google Button Container */}
             <div ref={googleBtnRef} className="w-full flex justify-center min-h-[44px]"></div>
 
-            <div className="relative flex w-full items-center justify-center border-t border-slate-200">
-              <span className="absolute bg-white px-2 text-[11px] uppercase tracking-wider text-slate-400">
-                Local Testing
-              </span>
-            </div>
+            {!import.meta.env.PROD && (
+              <>
+                <div className="relative flex w-full items-center justify-center border-t border-slate-200">
+                  <span className="absolute bg-white px-2 text-[11px] uppercase tracking-wider text-slate-400">
+                    Local Testing
+                  </span>
+                </div>
 
-            <button
-              onClick={async () => {
-                try {
-                  await loginWithDemo();
-                  navigate('/contacts');
-                } catch (e) {}
-              }}
-              className="w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-xs font-semibold text-slate-700 shadow-sm hover:bg-slate-50 transition flex items-center justify-center gap-2"
-            >
-              <Sparkles className="h-4 w-4 text-brand-600" />
-              Sign in as Demo Student
-            </button>
+                <button
+                  onClick={async () => {
+                    try {
+                      await loginWithDemo();
+                      navigate('/contacts');
+                    } catch (e) {}
+                  }}
+                  className="w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-xs font-semibold text-slate-700 shadow-sm hover:bg-slate-50 transition flex items-center justify-center gap-2"
+                >
+                  <Sparkles className="h-4 w-4 text-brand-600" />
+                  Sign in as Demo Student
+                </button>
+              </>
+            )}
           </div>
 
           <div className="pt-2 text-center">
