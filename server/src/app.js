@@ -19,48 +19,79 @@ const app = express();
 // Security headers
 app.use(helmet());
 
-// CORS configuration
+// CORS configuration with production whitelist check
+const clientOrigin = process.env.CLIENT_URL || 'http://localhost:5173';
 app.use(
   cors({
-    origin: process.env.CLIENT_URL || 'http://localhost:5173',
+    origin: (origin, callback) => {
+      // Allow requests with no origin (e.g. mobile apps, curl, server-to-server)
+      if (!origin) return callback(null, true);
+
+      // Support comma-separated origins if multiple are configured
+      const allowedOrigins = clientOrigin.split(',').map((o) => o.trim());
+      if (
+        allowedOrigins.includes(origin) ||
+        (process.env.NODE_ENV !== 'production' && origin.startsWith('http://localhost:'))
+      ) {
+        return callback(null, true);
+      }
+      return callback(new Error(`CORS error: Origin ${origin} not permitted`));
+    },
     credentials: true
   })
 );
 
-// Logging
+// Logging (disabled during automated test execution)
 if (process.env.NODE_ENV !== 'test') {
-  app.use(morgan('dev'));
+  app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'));
 }
 
-// Body parsers
+// Body parsers with payload size restrictions (DDoS protection)
 app.use(express.json({ limit: '10kb' }));
 app.use(express.urlencoded({ extended: true, limit: '10kb' }));
 
-// Sanitize MongoDB operators like $gt, $ne
+// Sanitize MongoDB operators like $gt, $ne to prevent query injection
 app.use(mongoSanitize());
 
-// Rate limiting (bypass in test environment)
+// Rate limiters (bypass in test environment)
 if (process.env.NODE_ENV !== 'test') {
-  const limiter = rateLimit({
+  // Stricter rate limiting on authentication routes (prevent brute-force)
+  const authLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
-    max: 100,
+    max: 20,
     standardHeaders: true,
     legacyHeaders: false,
     message: {
       error: {
         code: 'TOO_MANY_REQUESTS',
-        message: 'Too many requests from this IP, please try again later.'
+        message: 'Too many authentication attempts. Please try again after 15 minutes.'
       }
     }
   });
-  app.use('/api', limiter);
+  app.use('/api/auth', authLimiter);
+
+  // General rate limiter across all other API endpoints
+  const apiLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 120,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: {
+      error: {
+        code: 'TOO_MANY_REQUESTS',
+        message: 'Too many requests from this IP. Please try again later.'
+      }
+    }
+  });
+  app.use('/api', apiLimiter);
 }
 
-// Health check endpoint
+// Health check endpoint for Render/uptime monitors
 const healthCheck = (req, res) => {
   res.status(200).json({
     data: {
       status: 'ok',
+      uptime: process.uptime(),
       timestamp: new Date().toISOString()
     }
   });
