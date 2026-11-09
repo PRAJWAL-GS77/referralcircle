@@ -18,8 +18,8 @@ router.post('/google', validate(googleAuthSchema), authController.googleLogin);
 router.get('/me', authenticate, authController.getMe);
 router.post('/logout-all', authenticate, authController.logoutAll);
 
-// Dev-only demo login for local testing without Google Client ID setup
-if (process.env.NODE_ENV !== 'production') {
+// Demo login endpoint enabled in non-production OR when ENABLE_DEMO_LOGIN=true
+if (process.env.NODE_ENV !== 'production' || process.env.ENABLE_DEMO_LOGIN === 'true') {
   router.post('/demo', async (req, res, next) => {
     try {
       let user = await User.findOne({ email: 'demo@referralcircle.com' });

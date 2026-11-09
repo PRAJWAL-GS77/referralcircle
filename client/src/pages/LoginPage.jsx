@@ -2,12 +2,19 @@ import React, { useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
 import { Compass, Sparkles, Shield, Clock, Users } from 'lucide-react';
-import toast from 'react-hot-toast';
 
 export const LoginPage = () => {
   const { loginWithGoogle, loginWithDemo, isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const googleBtnRef = useRef(null);
+
+  const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+  const isGoogleConfigured = Boolean(
+    clientId &&
+    clientId !== 'your_google_client_id.apps.googleusercontent.com' &&
+    clientId !== 'mock_client_id_for_dev'
+  );
+  const showDemo = Boolean(import.meta.env.DEV || import.meta.env.VITE_ENABLE_DEMO === 'true');
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -16,10 +23,8 @@ export const LoginPage = () => {
   }, [isAuthenticated, navigate]);
 
   useEffect(() => {
-    const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
-
-    // Initialize Google Identity Services if available and clientId is provided
-    if (window.google?.accounts?.id && clientId && clientId !== 'mock_client_id_for_dev') {
+    // Initialize Google Identity Services if available and real clientId is configured
+    if (isGoogleConfigured && window.google?.accounts?.id) {
       window.google.accounts.id.initialize({
         client_id: clientId,
         callback: async (response) => {
@@ -43,7 +48,7 @@ export const LoginPage = () => {
         });
       }
     }
-  }, [loginWithGoogle, navigate]);
+  }, [clientId, isGoogleConfigured, loginWithGoogle, navigate]);
 
   return (
     <div className="flex min-h-screen bg-slate-50">
@@ -99,18 +104,25 @@ export const LoginPage = () => {
           </div>
 
           <div className="flex flex-col items-center justify-center pt-2 space-y-4">
-            {/* Real Google Button Container */}
-            <div ref={googleBtnRef} className="w-full flex justify-center min-h-[44px]"></div>
+            {/* Google Button or missing config message */}
+            {isGoogleConfigured ? (
+              <div ref={googleBtnRef} className="w-full flex justify-center min-h-[44px]"></div>
+            ) : (
+              <div className="w-full rounded-xl border border-dashed border-slate-300 bg-slate-50 p-3 text-center text-xs text-slate-500">
+                Google Sign-In not configured (VITE_GOOGLE_CLIENT_ID missing). Use Demo Student login below.
+              </div>
+            )}
 
-            {!import.meta.env.PROD && (
+            {showDemo && (
               <>
                 <div className="relative flex w-full items-center justify-center border-t border-slate-200">
                   <span className="absolute bg-white px-2 text-[11px] uppercase tracking-wider text-slate-400">
-                    Local Testing
+                    Instant Access
                   </span>
                 </div>
 
                 <button
+                  type="button"
                   onClick={async () => {
                     try {
                       await loginWithDemo();
