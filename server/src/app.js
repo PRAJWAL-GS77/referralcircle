@@ -5,6 +5,10 @@ import morgan from 'morgan';
 import rateLimit from 'express-rate-limit';
 import mongoSanitize from 'express-mongo-sanitize';
 import authRoutes from './routes/auth.routes.js';
+import contactRoutes from './routes/contact.routes.js';
+import templateRoutes from './routes/template.routes.js';
+import settingsRoutes from './routes/settings.routes.js';
+import exportRoutes from './routes/export.routes.js';
 import { errorHandler, notFoundHandler } from './middleware/error.middleware.js';
 
 const app = express();
@@ -63,6 +67,10 @@ app.get('/api/health', healthCheck);
 
 // API Routes
 app.use('/api/auth', authRoutes);
+app.use('/api/contacts', contactRoutes);
+app.use('/api/templates', templateRoutes);
+app.use('/api/settings', settingsRoutes);
+app.use('/api/export', exportRoutes);
 
 // 404 & Central Error Handling
 app.use(notFoundHandler);
