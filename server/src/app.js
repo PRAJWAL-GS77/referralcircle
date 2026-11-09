@@ -9,6 +9,9 @@ import contactRoutes from './routes/contact.routes.js';
 import templateRoutes from './routes/template.routes.js';
 import settingsRoutes from './routes/settings.routes.js';
 import exportRoutes from './routes/export.routes.js';
+import outreachRoutes from './routes/outreach.routes.js';
+import dashboardRoutes from './routes/dashboard.routes.js';
+import analyticsRoutes from './routes/analytics.routes.js';
 import { errorHandler, notFoundHandler } from './middleware/error.middleware.js';
 
 const app = express();
@@ -71,6 +74,9 @@ app.use('/api/contacts', contactRoutes);
 app.use('/api/templates', templateRoutes);
 app.use('/api/settings', settingsRoutes);
 app.use('/api/export', exportRoutes);
+app.use('/api/outreach', outreachRoutes);
+app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/analytics', analyticsRoutes);
 
 // 404 & Central Error Handling
 app.use(notFoundHandler);

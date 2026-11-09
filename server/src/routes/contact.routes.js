@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { z } from 'zod';
 import * as contactController from '../controllers/contact.controller.js';
+import * as outreachController from '../controllers/outreach.controller.js';
 import { authenticate } from '../middleware/auth.middleware.js';
 import { validate } from '../middleware/validate.middleware.js';
 
@@ -29,6 +30,15 @@ const statusEnum = z.enum([
 ]);
 
 const referralOutcomeEnum = z.enum(['none', 'referral_given', 'interview', 'offer']);
+
+const channelEnum = z.enum([
+  'email',
+  'linkedin',
+  'whatsapp',
+  'phone',
+  'in_person',
+  'other'
+]);
 
 const createContactSchema = z.object({
   body: z.object({
@@ -91,10 +101,29 @@ const listContactsSchema = z.object({
   }).optional()
 });
 
+const createOutreachSchema = z.object({
+  params: z.object({
+    id: z.string().regex(/^[0-9a-fA-F]{24}$/, 'Invalid contact ID format')
+  }),
+  body: z.object({
+    direction: z.enum(['sent', 'received'], { required_error: 'Direction is required (sent or received)' }),
+    channel: channelEnum,
+    messageSummary: z.string({ required_error: 'Message summary is required' }).trim().min(1, 'Message summary cannot be empty'),
+    messageBody: z.string().optional(),
+    override: z.boolean().optional(),
+    overrideReason: z.string().optional(),
+    sentAt: z.string().datetime().optional()
+  })
+});
+
 router.get('/', validate(listContactsSchema), contactController.listContacts);
 router.post('/', validate(createContactSchema), contactController.createContact);
 router.get('/:id', validate(idParamSchema), contactController.getContact);
 router.patch('/:id', validate(updateContactSchema), contactController.updateContact);
 router.delete('/:id', validate(idParamSchema), contactController.deleteContact);
+
+// Outreach sub-routes for contact
+router.get('/:id/outreach', validate(idParamSchema), outreachController.listOutreach);
+router.post('/:id/outreach', validate(createOutreachSchema), outreachController.createOutreach);
 
 export default router;
