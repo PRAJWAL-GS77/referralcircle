@@ -26,11 +26,14 @@ apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response && error.response.status === 401) {
-      // Do not redirect if we are already on login page or attempting login
-      if (!window.location.pathname.includes('/login')) {
+      const isLoginRoute =
+        window.location.hash.includes('/login') ||
+        window.location.pathname.includes('/login');
+
+      if (!isLoginRoute) {
         localStorage.removeItem('token');
         localStorage.removeItem('user');
-        window.location.href = '/login';
+        window.location.hash = '#/login';
       }
     }
     return Promise.reject(error);
